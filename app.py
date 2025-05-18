@@ -5,17 +5,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from PIL import Image
 
-# Load the dataset
 @st.cache_data
 def load_data():
     data = pd.read_csv("food_nutrition.csv")
-    # Clean data - fill missing cook times with median
     data['cook_time_minutes'] = data['cook_time_minutes'].fillna(data['cook_time_minutes'].median())
     return data
 
 data = load_data()
 
-# Set page config
 st.set_page_config(
     page_title="The Smartest AI Nutrition Assistant",
     page_icon="🍏",
@@ -23,7 +20,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Sidebar - User Profile
 with st.sidebar:
     st.title("👤 User Profile")
     st.subheader("Tell us about yourself")
@@ -60,7 +56,6 @@ with st.sidebar:
     if st.button("Reset Preferences"):
         st.experimental_rerun()
 
-# Main App
 st.title("🍏 The Smartest AI Nutrition Assistant")
 st.subheader("Personalized nutrition guidance powered by AI")
 
@@ -72,13 +67,12 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📝 Health Insights"
 ])
 
-with tab1:  # Dashboard
+with tab1: 
     st.subheader("Recommended Foods")
     
-    # Filter data based on user preferences
+    
     filtered_data = data.copy()
     
-    # Apply dietary filters
     if "Vegetarian" in dietary_preferences:
         filtered_data = filtered_data[~filtered_data['name'].str.contains('chicken|beef|pork|shrimp|bacon', case=False)]
     if "Vegan" in dietary_preferences:
@@ -90,7 +84,6 @@ with tab1:  # Dashboard
     if "Low-Carb" in health_goals:
         filtered_data = filtered_data.sort_values(by='carbohydrates', ascending=True)
     
-    # Apply allergy filters
     if "Nuts" in allergies:
         filtered_data = filtered_data[~filtered_data['name'].str.contains('nut|peanut|almond', case=False)]
     if "Dairy" in allergies:
@@ -98,7 +91,6 @@ with tab1:  # Dashboard
     if "Eggs" in allergies:
         filtered_data = filtered_data[~filtered_data['name'].str.contains('egg', case=False)]
     
-    # Show top 5 recommendations
     st.write("Based on your profile, we recommend these foods:")
     for i, row in filtered_data.head(5).iterrows():
         with st.expander(f"🍴 {row['name']} - ⏱️{row['cook_time_minutes']} min - ⭐{row['user_ratings']:.2f}"):
@@ -110,16 +102,13 @@ with tab1:  # Dashboard
     
     st.subheader("Nutrition Summary")
     
-    # Calculate BMI
     bmi = weight / ((height/100) ** 2)
     bmi_status = "Underweight" if bmi < 18.5 else "Normal" if bmi < 25 else "Overweight" if bmi < 30 else "Obese"
     
-    # Display metrics
     cols = st.columns(2)
     cols[0].metric("BMI", f"{bmi:.1f}", bmi_status)
     cols[1].metric("Target Calories", f"{target_calories} kcal")
     
-    # Macronutrient distribution
     st.write("**Daily Macronutrient Targets**")
     fig, ax = plt.subplots()
     sizes = [target_protein*4, target_carbs*4, target_fat*9]
@@ -129,11 +118,10 @@ with tab1:  # Dashboard
     ax.axis('equal')
     st.pyplot(fig)
     
-    # Water intake recommendation
-    water_intake = weight * 0.033  # liters per day
+    water_intake = weight * 0.033  
     st.metric("Recommended Water Intake", f"{water_intake:.1f} liters per day")
 
-with tab2:  # Food Explorer
+with tab2: 
     st.subheader("Explore Our Food Database")
     
     search_query = st.text_input("Search for foods by name or ingredients")
@@ -146,7 +134,6 @@ with tab2:  # Food Explorer
     with cols[2]:
         max_cook_time = st.slider("Max Cook Time (minutes)", 0, 120, 60)
     
-    # Apply filters
     filtered_foods = data[
         (data['calories'] >= min_calories) & 
         (data['calories'] <= max_calories) & 
@@ -171,7 +158,6 @@ with tab2:  # Food Explorer
             cols[2].metric("Carbs", f"{row['carbohydrates']}g")
             cols[3].metric("Fat", f"{row['fat']}g")
             
-            # Nutrition facts visualization
             nutrients = {
                 'Protein': row['protein'],
                 'Carbs': row['carbohydrates'],
@@ -186,7 +172,7 @@ with tab2:  # Food Explorer
             plt.title('Nutritional Content')
             st.pyplot(fig)
 
-with tab3:  # Meal Planner
+with tab3:  
     st.subheader("AI-Powered Meal Planner")
     
     cols = st.columns(2)
@@ -196,7 +182,6 @@ with tab3:  # Meal Planner
         time_available = st.slider("Time Available (minutes)", 5, 120, 30)
     
     if st.button("Generate Meal Plan"):
-        # Filter foods based on meal type and time
         suitable_foods = data[data['cook_time_minutes'] <= time_available]
         
         if meal_type == "Breakfast":
@@ -208,13 +193,11 @@ with tab3:  # Meal Planner
         elif meal_type == "Snack":
             suitable_foods = suitable_foods[suitable_foods['name'].str.contains('cookie|cake|muffin|bite', case=False)]
         
-        # Apply user preferences
         if "High-Protein" in health_goals:
             suitable_foods = suitable_foods.sort_values(by='protein', ascending=False)
         if "Low-Carb" in health_goals:
             suitable_foods = suitable_foods.sort_values(by='carbohydrates', ascending=True)
         
-        # Select 3 options
         if len(suitable_foods) > 0:
             st.success("Here are your personalized meal options:")
             options = suitable_foods.head(3)
@@ -223,14 +206,12 @@ with tab3:  # Meal Planner
                 with st.expander(f"🍴 {row['name']} - ⏱️{row['cook_time_minutes']} min - ⭐{row['user_ratings']:.2f}"):
                     st.write(f"**Description:** {row['description']}")
                     
-                    # Nutrition info
                     cols = st.columns(4)
                     cols[0].metric("Calories", f"{row['calories']} kcal")
                     cols[1].metric("Protein", f"{row['protein']}g")
                     cols[2].metric("Carbs", f"{row['carbohydrates']}g")
                     cols[3].metric("Fat", f"{row['fat']}g")
                     
-                    # Percentage of daily targets
                     st.write("**% of Daily Targets**")
                     cols = st.columns(4)
                     cols[0].metric("Calories", f"{row['calories']/target_calories*100:.1f}%")
@@ -240,7 +221,7 @@ with tab3:  # Meal Planner
         else:
             st.warning("No meals found matching your criteria. Try adjusting your filters.")
 
-with tab4:  # Nutrition Analysis
+with tab4: 
     st.subheader("Nutrition Analysis")
     
     selected_food = st.selectbox("Select a food to analyze", data['name'])
@@ -262,7 +243,7 @@ with tab4:  # Nutrition Analysis
         st.metric("Fat", f"{food_data['fat']}g")
     
     with cols[1]:
-        # Macronutrient pie chart
+       
         fig1, ax1 = plt.subplots()
         macronutrients = [food_data['protein'], food_data['carbohydrates'], food_data['fat']]
         labels = ['Protein', 'Carbs', 'Fat']
@@ -271,7 +252,6 @@ with tab4:  # Nutrition Analysis
         ax1.axis('equal')
         st.pyplot(fig1)
         
-        # Micronutrients bar chart
         fig2, ax2 = plt.subplots()
         micronutrients = {
             'Fiber': food_data['fiber'],
@@ -282,7 +262,6 @@ with tab4:  # Nutrition Analysis
         plt.title('Micronutrients')
         st.pyplot(fig2)
     
-    # Health impact analysis
     st.subheader("Health Impact Analysis")
     
     if "Weight Loss" in health_goals:
@@ -303,16 +282,14 @@ with tab4:  # Nutrition Analysis
         else:
             st.success(f"✅ Low carb option ({food_data['carbohydrates']}g)")
 
-with tab5:  # Health Insights
+with tab5: 
     st.subheader("Personalized Health Insights")
     
-    # Calculate BMR (Basal Metabolic Rate)
     if gender == "Male":
         bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age)
     else:
         bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age)
     
-    # Adjust for activity level
     activity_factors = {
         "Sedentary": 1.2,
         "Lightly Active": 1.375,
@@ -327,7 +304,6 @@ with tab5:  # Health Insights
         st.metric("Basal Metabolic Rate (BMR)", f"{bmr:.0f} kcal/day")
         st.metric("Total Daily Energy Expenditure (TDEE)", f"{tdee:.0f} kcal/day")
         
-        # Weight management advice
         if "Weight Loss" in health_goals:
             st.info("For weight loss, aim for 300-500 kcal below your TDEE")
             recommended_intake = tdee - 500
@@ -338,7 +314,6 @@ with tab5:  # Health Insights
             st.metric("Recommended Daily Intake", f"{recommended_intake:.0f} kcal")
     
     with cols[1]:
-        # Macronutrient distribution advice
         st.write("**Recommended Macronutrient Distribution**")
         
         if "Weight Loss" in health_goals:
@@ -349,7 +324,7 @@ with tab5:  # Health Insights
             st.write("- Protein: 25-35% of calories")
             st.write("- Carbs: 40-50% of calories")
             st.write("- Fat: 15-25% of calories")
-        else:  # Maintenance
+        else:  
             st.write("- Protein: 20-30% of calories")
             st.write("- Carbs: 45-55% of calories")
             st.write("- Fat: 20-35% of calories")
@@ -389,7 +364,6 @@ with tab5:  # Health Insights
         - Spread carbohydrate intake evenly throughout the day
         """)
 
-# Footer
 st.divider()
 st.write("""
 The Smartest AI Nutrition Assistant provides general nutrition information and should not be considered 
